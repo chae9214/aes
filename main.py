@@ -7,7 +7,7 @@ from torch.autograd import Variable
 from torch.optim import Adam
 
 from preprocess import Preprocess
-from model import Model
+from model import LSTMModel
 
 # =================================================
 # Parse arguments
@@ -40,6 +40,10 @@ if torch.cuda.is_available():
 # Load preprocessed data
 # =================================================
 
+print('=' * 89)
+print('preprocessing data...')
+print('=' * 89)
+
 glove_path = "./data/glove.840B.300d.txt"
 data_path = "./data/"
 
@@ -49,9 +53,14 @@ corpus = Preprocess(glove_path, data_path)
 # Build model
 # =================================================
 
+print('=' * 89)
+print('building model...')
+print('=' * 89)
+
 n = len(corpus.vocab)
 
-model = Model(args.model, n, EMBED_SIZE, NUM_HID, NUM_LAY)
+# model = RNNModel(args.model, n, EMBED_SIZE, NUM_HID, NUM_LAY)
+model = LSTMModel(n, EMBED_SIZE, NUM_HID, glove_path, corpus.word2idx)
 if args.cuda:
     model.cuda()
 
@@ -90,6 +99,10 @@ def get_batch(source, i, evaluation=False):
 # Train model
 # =================================================
 
+print('=' * 89)
+print('training model...')
+print('=' * 89)
+
 def evaluate(data_source):
     model.eval()
     total_loss = 0
@@ -98,8 +111,11 @@ def evaluate(data_source):
     for i in range(0, data_source.size(0) - 1, args.bptt):
         data, targets = get_batch(data_source, i, evaluation=True)
         output, hidden = model(data, hidden)
-        output_flat = output.view(-1, n)
-        total_loss += len(data) * criterion(output_flat, targets).data
+
+        y_ = output.view(-1, n)
+        loss = mse(y_, targets)
+
+        total_loss += len(data) * loss.data
         hidden = repackage_hidden(hidden)
     return total_loss[0] / len(data_source)
 
@@ -109,18 +125,18 @@ def train():
     start_time = time.time()
     hidden = model.init_hidden(args.batch_size)
     optim = Adam(model.parameters())
-    losser = nn.MSELoss()
+    mse = nn.MSELoss() # TODO: size_average=False?
     for batch, i in enumerate(range(0, train_data.size(0) - 1, args.bptt)):
         data, targets = get_batch(train_data, i) # TODO: decide whether to use Dataloader
         hidden = repackage_hidden(hidden)
         model.zero_grad()
         output, hidden = model(data, hidden)
 
-        # TODO: implement use of MSELoss
-        # y_ = model(x)
-        # loss = losser(y_, targets)
+        # TODO: use MSELoss
+        y_ = output.view(-1, n)
+        loss = mse(y_, targets)
 
-        loss = criterion(output.view(-1, n), targets) # TODO: disable in place of MSELoss
+        # loss = criterion(output.view(-1, n), targets) # TODO: disable in place of MSELoss
         optim.zero_grad()
         loss.backward()
         optim.step()

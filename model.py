@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
@@ -5,17 +6,44 @@ from torch import LongTensor as LT
 import torch.nn.functional as F
 
 # =================================================
+# GloVe Word Vectors
+# =================================================
+
+def load_glove(path):
+    with open(path) as f:
+        glove = {}
+        for line in f.readlines():
+            values = line.split()
+            word = ''.join(values[0:-300])
+            vector = np.array(values[-300:], dtype='float32')
+            glove[word] = vector
+        return glove
+
+def load_embeddings(glove, word2idx, embedding_dim=300):
+    embeddings = np.zeros((len(word2idx), embedding_dim))
+    for word in glove.keys():
+        index = word2idx.get(word)
+        if index:
+            vector = np.array(glove[word][1], dtype='float32')
+            embeddings[index] = vector
+    return torch.from_numpy(embeddings).float()
+
+# =================================================
 # LSTM Model
 # =================================================
 
-class Model(nn.Module):
+class LSTMModel(nn.Module):
 
-    def __init__(self, d=300, h_dim=1024):
-        super(Model, self).__init__()
+    def __init__(self, n, d, h_dim, glove_path, word2idx):
+        super(LSTMModel, self).__init__()
         # d = embedding_dimension
         self.d = d
-        self.embedding = nn.Embedding(20000, 300)  # TODO: 알아서
-        self.embedding.weight = glove matrix
+
+        self.glove = load_glove(glove_path)
+        self.word2idx = word2idx
+
+        self.embedding = nn.Embedding(n, d)
+        self.embedding.weight = load_embeddings(self.glove, self.word2idx)
         self.h_dim = h_dim
         self.encoder = nn.LSTM(self.d, self.h_dim)
         self.fc1 = nn.Linear(self.h_dim, 2048)
@@ -44,6 +72,10 @@ class Model(nn.Module):
         out = F.leaky_relu(out)  # activation
         out = self.fc2(out)  # 2048 -> 1
         return out
+
+# =================================================
+# RNN Model
+# =================================================
 
 class RNNModel(nn.Module):
     def __init__(self, rnn_type, ntoken, ninp, nhid, nlayers, dropout=0.5, tie_weights=False):
