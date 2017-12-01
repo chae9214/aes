@@ -1,6 +1,7 @@
 # import numpy as np
 # import torch
 import os
+import codecs
 import pickle
 from nltk.tokenize import TweetTokenizer
 
@@ -73,7 +74,7 @@ class Preprocess():
         vocab = set()
         file_list = ['train.csv', 'valid.csv', 'test.csv']
         for file_name in file_list:
-            with open(os.path.join(path, file_name)) as f:
+            with codecs.open(os.path.join(path, file_name), 'r', encoding='utf-8') as f:
                 for line in f.readlines():
                     temp = line.replace('\ufeff', '').replace('\n', '').split(',')
                     data = tknzr.tokenize(''.join(temp[1:-1]))
@@ -88,7 +89,7 @@ class Preprocess():
 
     def tokenize(self, path):
         tknzr = TweetTokenizer()
-        with open(path) as f:
+        with codecs.open(path, 'r', encoding='utf-8') as f:
             data = {}
             # essay_id, essay, domain1_score
             for line in f.readlines():
