@@ -127,10 +127,11 @@ def train():
     optim = Adam(model.parameters())
     mse = nn.MSELoss() # TODO: size_average=False?
     for batch, i in enumerate(range(0, train_data.size(0) - 1, args.bptt)):
-        data, targets = get_batch(train_data, i) # TODO: decide whether to use Dataloader
+        # data, targets = get_batch(train_data, i) # TODO: decide whether to use Dataloader
+
         hidden = repackage_hidden(hidden)
         model.zero_grad()
-        output, hidden = model(data, hidden)
+        output = model(data, hidden)
 
         # TODO: use MSELoss
         y_ = output.view(-1, n)

@@ -12,6 +12,7 @@ import torch.nn.functional as F
 
 def load_glove(path):
     with codecs.open(path, 'r', encoding='utf-8') as f:
+    # with open(path) as f:
         glove = {}
         for line in f.readlines():
             values = line.split()
@@ -72,6 +73,7 @@ class LSTMModel(nn.Module):
         out = self.bn(out)  # 2048 -> 2048
         out = F.leaky_relu(out)  # activation
         out = self.fc2(out)  # 2048 -> 1
+        # out.size() == [batch_size, 1]
         return out
 
 # =================================================
