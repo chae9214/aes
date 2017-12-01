@@ -1,4 +1,5 @@
 import numpy as np
+import codecs
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
@@ -10,7 +11,7 @@ import torch.nn.functional as F
 # =================================================
 
 def load_glove(path):
-    with open(path) as f:
+    with codecs.open(path, 'r', encoding='utf-8') as f:
         glove = {}
         for line in f.readlines():
             values = line.split()
@@ -41,9 +42,9 @@ class LSTMModel(nn.Module):
 
         self.glove = load_glove(glove_path)
         self.word2idx = word2idx
-
         self.embedding = nn.Embedding(n, d)
-        self.embedding.weight = load_embeddings(self.glove, self.word2idx)
+        self.embedding.weight.data.copy_(load_embeddings(self.glove, self.word2idx))
+
         self.h_dim = h_dim
         self.encoder = nn.LSTM(self.d, self.h_dim)
         self.fc1 = nn.Linear(self.h_dim, 2048)
