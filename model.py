@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import numpy as np
 import codecs
 import torch
@@ -11,8 +13,8 @@ import torch.nn.functional as F
 # =================================================
 
 def load_glove(path):
-    with codecs.open(path, 'r', encoding='utf-8') as f:
-    # with open(path) as f:
+    with codecs.open(path, 'r', encoding='utf-8') as f:     # on Linux
+    # with open(path) as f:                                   # on Mac
         glove = {}
         for line in f.readlines():
             values = line.split()
@@ -81,6 +83,7 @@ class LSTMModel(nn.Module):
 # =================================================
 
 class RNNModel(nn.Module):
+
     def __init__(self, rnn_type, ntoken, ninp, nhid, nlayers, dropout=0.5, tie_weights=False):
         super(Model, self).__init__()
         self.drop = nn.Dropout(dropout)

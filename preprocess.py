@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 # import numpy as np
 # import torch
 import os
@@ -47,6 +49,7 @@ def pickle_read(filename):
 # =================================================
 
 class Preprocess():
+
     def __init__(self, glove_path, data_path):
         self.vocab, self.word2idx, self.idx2word = self.build_vocab(data_path)
 

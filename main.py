@@ -1,10 +1,14 @@
+# -*- coding: utf-8 -*-
+
 import argparse
 import time
 import math
+import pickle
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
 from torch.optim import Adam
+from torch.utils.data import Dataset, DataLoader
 
 from preprocess import Preprocess
 from model import LSTMModel
@@ -47,7 +51,23 @@ print('=' * 89)
 glove_path = "./data/glove.840B.300d.txt"
 data_path = "./data/"
 
-corpus = Preprocess(glove_path, data_path)
+corpus = Preprocess(glove_path, data_path) # TODO: variable names can be misleading
+
+class Corpus(Dataset):
+
+    def __init__(self, filename):
+        _data = pickle.load(open(filename, 'rb'))
+        self.data = [_data[key] for key in _data]
+
+    def __len__(self):
+        return len(self.data)
+
+    def __getitem__(self, idx):
+        return self.data[idx]
+
+train = Corpus('data/train.dat')
+valid = Corpus('data/valid.dat')
+test = Corpus('data/test.dat')
 
 # =================================================
 # Build model
@@ -64,12 +84,13 @@ model = LSTMModel(n, EMBED_SIZE, NUM_HID, glove_path, corpus.word2idx)
 if args.cuda:
     model.cuda()
 
-criterion = nn.CrossEntropyLoss() # TODO: look up & not in use
+# criterion = nn.CrossEntropyLoss()
 
 # =================================================
 # Utility functions
 # =================================================
 
+# *** do not use ***
 def batchify(data, bsz):
     nbatch = data.size(0) // bsz
     data = data.narrow(0, 0, nbatch * bsz)
@@ -79,9 +100,9 @@ def batchify(data, bsz):
     return data
 
 eval_batch_size = 10
-train_data = batchify(corpus.train, BATCH_SIZE)
-valid_data = batchify(corpus.valid, eval_batch_size)
-test_data = batchify(corpus.test, eval_batch_size)
+# train_data = batchify(corpus.train, BATCH_SIZE)
+# valid_data = batchify(corpus.valid, eval_batch_size)
+# test_data = batchify(corpus.test, eval_batch_size)
 
 def repackage_hidden(h):
     if type(h) == Variable:
@@ -89,6 +110,7 @@ def repackage_hidden(h):
     else:
         return tuple(repackage_hidden(v) for v in h)
 
+# *** do not use ***
 def get_batch(source, i, evaluation=False):
     seq_len = min(args.bptt, len(source) - 1 - i)
     data = Variable(source[i:i+seq_len], volatile=evaluation)
@@ -107,37 +129,50 @@ def evaluate(data_source):
     model.eval()
     total_loss = 0
     n = len(corpus.vocab)
-    hidden = model.init_hidden(eval_batch_size)
-    for i in range(0, data_source.size(0) - 1, args.bptt):
-        data, targets = get_batch(data_source, i, evaluation=True)
-        output, hidden = model(data, hidden)
+    # hidden = model.init_hidden(eval_batch_size)
+    mse = nn.MSELoss()
+    data
+
+    for i in range(0, len(data_source) - 1, args.bptt): # TODO: fix loop (bptt vs batch)
+        # data, targets = get_batch(data_source, i, evaluation=True)
+        dataloader = DataLoader(valid, batch_size=BATCH_SIZE, shuffle=True)
+        data, targets = next(iter(dataloader))
+
+        output = model(data)
 
         y_ = output.view(-1, n)
         loss = mse(y_, targets)
 
         total_loss += len(data) * loss.data
-        hidden = repackage_hidden(hidden)
+        # hidden = repackage_hidden(hidden)
     return total_loss[0] / len(data_source)
 
 def train():
     model.train()
     total_loss = 0
     start_time = time.time()
-    hidden = model.init_hidden(args.batch_size)
+    # hidden = model.init_hidden(args.batch_size)
     optim = Adam(model.parameters())
-    mse = nn.MSELoss() # TODO: size_average=False?
-    for batch, i in enumerate(range(0, train_data.size(0) - 1, args.bptt)):
-        # data, targets = get_batch(train_data, i) # TODO: decide whether to use Dataloader
+    mse = nn.MSELoss()
+    dataloader = DataLoader(train, batch_size=BATCH_SIZE, shuffle=True)
 
-        hidden = repackage_hidden(hidden)
+    for batch, i in enumerate(range(0, len(train) - 1, args.bptt)): # TODO: fix loop (bptt vs batch)
+        # data, targets = get_batch(train_data, i)
+
+        # x, y = next(iter(dataloader))
+        # type(x) == <class 'list'>
+        # type(x[0]) == <class 'tuple'> of size batch_size
+        # type(y) == <class 'torch.LongTensor'> of size batch_size
+        data, targets = next(iter(dataloader))
+
+        # hidden = repackage_hidden(hidden)
         model.zero_grad()
-        output = model(data, hidden)
+        output = model(data)
 
-        # TODO: use MSELoss
         y_ = output.view(-1, n)
         loss = mse(y_, targets)
 
-        # loss = criterion(output.view(-1, n), targets) # TODO: disable in place of MSELoss
+        # loss = criterion(output.view(-1, n), targets)
         optim.zero_grad()
         loss.backward()
         optim.step()
@@ -154,7 +189,7 @@ def train():
             elapsed = time.time() - start_time
             print('| epoch {:3d} | {:5d}/{:5d} batches | lr {:02.2f} | ms/batch {:5.2f} | '
                     'loss {:5.2f} | ppl {:8.2f}'.format(
-                epoch, batch, len(train_data) // args.bptt, lr,
+                epoch, batch, len(train) // args.bptt, lr,
                 elapsed * 1000 / args.log_interval, cur_loss, math.exp(cur_loss)))
             total_loss = 0
             start_time = time.time()
@@ -165,7 +200,7 @@ best_val_loss = None
 for epoch in range(1, args.epochs + 1):
     epoch_start_time = time.time()
     train()
-    val_loss = evaluate(valid_data)
+    val_loss = evaluate(valid)
     print('-' * 89)
     print('| end of epoch {:3d} | time: {:5.2f}s | valid loss {:5.2f} | '
           'valid ppl {:8.2f}'.format(epoch, (time.time() - epoch_start_time),
