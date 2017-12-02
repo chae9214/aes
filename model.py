@@ -60,13 +60,15 @@ class LSTMModel(nn.Module):
     def forward(self, x):
         # x = [[11, 21, 31], [12, 22, 32]]
         # x.size() == [seqs, batch_size]
-        x = self.embedding(Variable(LT(x), requires_grad=False))
+        x = self.embedding(Variable(LT([list(x_) for x_ in x]).cuda(), requires_grad=False))
+
+#        x = self.embedding(Variable(LT(x), requires_grad=False))
         # x.size() == [seqs, batch_size, embedding_dimension]
         batch_size = x.size()[1]
         h = self.init_hidden(batch_size)
         c = self.init_hidden(batch_size)
-        # h.size() == [1, batch_size, h_dim]
-        # c.size() == [1, batch_size, h_dim]
+        h = h.cuda()
+        c = c.cuda()
         out, (h, c) = self.encoder(x, (h, c))
         # out.size() == [seqs, batch_size, h_dim]
         h = h.squeeze()
