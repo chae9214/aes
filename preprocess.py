@@ -48,6 +48,13 @@ def pickle_read(filename):
 # Preprocess class
 # =================================================
 
+
+def equalize(data, length=500):  # data : list type
+    if (len(data) > length):
+        return data[:length]
+    else:
+        return data + ['<eos>'] * (500 - len(data))
+
 class Preprocess():
 
     def __init__(self, glove_path, data_path):
@@ -97,14 +104,9 @@ class Preprocess():
             # essay_id, essay, domain1_score
             for line in f.readlines():
                 temp = line.replace('\ufeff', '').replace('\n', '').split(',')
-                data[temp[0]] = [[self.word2idx[x] for x in tknzr.tokenize(''.join(temp[1:-1]))], int(temp[-1])]
+                data[temp[0]] = [equalize([self.word2idx[x] for x in tknzr.tokenize(''.join(temp[1:-1]))]), int(temp[-1])]
             return data
 
-    def equalize(self, data, length=500):  # data : list type
-        if (len(data) > length):
-            return data[:length]
-        else:
-            return data + ['<eos>'] * (500 - len(data))
 
 
 if __name__=='__main__':
