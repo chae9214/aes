@@ -174,5 +174,6 @@ def evaluate(model, test_data, batch_size):
 
         total_loss += len(data) * loss.data
     met_rmse, met_pearsonr, spearmanr, cohens = get_metrics(y_cum, targets_cum)
-    print('| RMSE : {:3.3f} | PEARSON R : {:3.3f} | SPEARMAN R : {:3.3f} | COHEN KAPPA : {:3.3f} |'.format(met_rmse,met_pearsonr, spearmanr, cohens))
+    print('| RMSE : {:3.3f} | PEARSON R : {:3.3f} | SPEARMAN R : {:3.3f} | KAPPA : {:3.3f} |'.format(
+        met_rmse, met_pearsonr, spearmanr, cohens))
     return total_loss[0] / len(test_data)
