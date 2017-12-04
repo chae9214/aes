@@ -136,6 +136,9 @@ if __name__=='__main__':
               'valid ppl {:8.2f}'.format(epoch, (time.time() - epoch_start_time),
                                          val_loss, math.exp(val_loss)))
         pprint(logfile_path, '-' * 89)
+        if epoch % 20 == 0:
+            with open (savefile_path + '--e{}'.format(epoch), 'wb') as f:
+                torch.save(model, f)
         if not best_val_loss or val_loss < best_val_loss:
             with open(savefile_path, 'wb') as f:
                 torch.save(model, f)
