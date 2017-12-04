@@ -27,9 +27,9 @@ def parse_args():
     parser.add_argument('--set', type=str, default='1',
                         help="essay set to use (1-8)")
     parser.add_argument('--model', type=str, default='LSTM',
-                        help="model to use (CNN, LSTM, Bi-LSTM)")
+                        help="model to use (CNN, LSTM, bi-LSTM)")
     parser.add_argument('--embed', type=str, default='glove',
-                        help="embedding to use (None, glove)")
+                        help="embedding to use (none, glove)")
     # parameters to tune
     parser.add_argument('--e_dim', type=int, default=300,
                         help='embedding dimension')
@@ -109,9 +109,9 @@ if __name__=='__main__':
     n = len(preprocessor.vocab)
 
     if args.model == 'LSTM':
-        model = LSTMModel(n, args.e_dim, args.h_dim)
+        model = LSTMModel(n, args.e_dim, args.h_dim, args.dropout)
     elif args.model == 'CNN':
-        model = CNNModel()
+        model = CNNModel(n, args.e_dim, args.h_dim, args.dropout)
 
     if args.embed == 'glove':
         model.init_weights_glove(glove_path, preprocessor.word2idx)
