@@ -1,57 +1,61 @@
-    # -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
+import os
 import argparse
 import time
 import math
 import pickle
 import torch
-import torch.nn as nn
-from torch.autograd import Variable
-from torch.optim import Adam
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset
 
-from preprocess import Preprocess
-from model import LSTMModel
+from preprocess import Preprocessor
+from model import CNNModel, LSTMModel
+from train import train, evaluate
 
 # =================================================
-# Parse arguments
+# Utility functions
 # =================================================
 
-parser = argparse.ArgumentParser()
-parser.add_argument('-d', '--data', type=str, default='./data/training_set_rel3.tsv',
-                    help='path to load data')
-parser.add_argument('-s', '--save', type=str,  default='./save/model.pt',
-                    help='path to save model')
-parser.add_argument('-m', '--model', type=str, default='LSTM',
-                    help="model to use (LSTM)")
-parser.add_argument('-c', '--cuda', action='store_true',
-                    help='use CUDA')
-args = parser.parse_args()
+def parse_args():
+    parser = argparse.ArgumentParser()
+    # paths
+    parser.add_argument('--data', type=str, default='./data/essayset_1/',
+                        help='path to load data')
+    parser.add_argument('--save', type=str, default='./save/',
+                        help='path to save model')
+    # model/embedding choice
+    parser.add_argument('--model', type=str, default='LSTM',
+                        help="model to use (CNN, LSTM, Bi-LSTM)")
+    parser.add_argument('--embed', type=str, default='glove',
+                        help="embedding to use (None, glove)")
+    # parameters to tune
+    parser.add_argument('--e_dim', type=int, default=300,
+                        help='embedding dimension')
+    parser.add_argument('--h_dim', type=int, default=200,
+                        help='hidden dimension')
+    parser.add_argument('--batch', type=int, default=20,
+                        help='batch size')
+    parser.add_argument('--epochs', type=int, default=40,
+                        help='upper epoch limit')
+    parser.add_argument('--lr', type=float, default=20,
+                        help='initial learning rate')
+    parser.add_argument('--dropout', type=float, default=0.2,
+                        help='dropout applied to layers')
+    # boolean arguments
+    parser.add_argument('-n', '--noise', action='store_true',
+                        help='use noise')
+    parser.add_argument('-c', '--cuda', action='store_true',
+                        help='use CUDA')
+    args = parser.parse_args()
+    return args
 
-EMBED_SIZE = 300
-BATCH_SIZE = 20
-NUM_HID = 200
-NUM_LAY = 2
-INIT_LR = 20
-EPOCHS = 5
-BPTT = 35
-
-torch.manual_seed(1)
-if torch.cuda.is_available():
-    torch.cuda.manual_seed(1)
+def pprint(filepath, s):
+    print(s)
+    open(filepath, 'a').write(s)
 
 # =================================================
-# Load preprocessed data
+# Corpus class
 # =================================================
-
-print('=' * 89)
-print('preprocessing data...')
-print('=' * 89)
-
-glove_path = "./data/glove.840B.300d.txt"
-data_path = "./data/"
-
-corpus = Preprocess(glove_path, data_path) # TODO: variable names can be misleading
 
 class Corpus(Dataset):
 
@@ -65,155 +69,86 @@ class Corpus(Dataset):
     def __getitem__(self, idx):
         return self.data[idx]
 
-train_data = Corpus('data/train.dat')
-valid_data = Corpus('data/valid.dat')
-test_data = Corpus('data/test.dat')
-
 # =================================================
-# Build model
+# Main
 # =================================================
 
-print('=' * 89)
-print('building model...')
-print('=' * 89)
+if __name__=='__main__':
+    args = parse_args()
+    savefile = "model_{}_{}--set{}_emb{}_hid{}_bat{}_epc{}.pt".format(args.model, args.embed, args.data.strip('/')[-1],
+                                                                      args.e_dim, args.h_dim, args.batch, args.epochs)
+    logfile = "log_{}_{}--set{}_emb{}_hid{}_bat{}_epc{}.pt".format(args.model, args.embed, args.data.strip('/')[-1],
+                                                                   args.e_dim, args.h_dim, args.batch, args.epochs)
+    savefile_path = os.path.join(args.save, savefile)
+    logfile_path = os.path.join(args.save, logfile)
 
-n = len(corpus.vocab)
+    torch.manual_seed(1)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed(1)
 
-# model = RNNModel(args.model, n, EMBED_SIZE, NUM_HID, NUM_LAY)
-model = LSTMModel(n, EMBED_SIZE, NUM_HID, glove_path, corpus.word2idx)
-if args.cuda:
-    model.cuda()
+    ### Load preprocessed data
+    pprint(logfile_path, '=' * 89)
+    pprint(logfile_path, 'preprocessing data...')
+    pprint(logfile_path, '=' * 89)
 
-# criterion = nn.CrossEntropyLoss()
+    glove_path = "./data/glove.840B.300d.txt"
 
-# =================================================
-# Utility functions
-# =================================================
+    preprocessor = Preprocessor(args.data)
+    train_data = Corpus('data/train.dat')
+    valid_data = Corpus('data/valid.dat')
+    test_data = Corpus('data/test.dat')
 
-# *** do not use ***
+    ### Build model
+    pprint(logfile_path, '=' * 89)
+    pprint(logfile_path, 'building model...')
+    pprint(logfile_path, '=' * 89)
 
-eval_batch_size = 10
-# train_data = batchify(corpus.train, BATCH_SIZE)
-# valid_data = batchify(corpus.valid, eval_batch_size)
-# test_data = batchify(corpus.test, eval_batch_size)
+    n = len(preprocessor.vocab)
 
-def repackage_hidden(h):
-    if type(h) == Variable:
-        return Variable(h.data)
-    else:
-        return tuple(repackage_hidden(v) for v in h)
+    if args.model == 'LSTM':
+        model = LSTMModel(n, args.e_dim, args.h_dim)
+    elif args.model == 'CNN':
+        model = CNNModel()
 
+    if args.embed == 'glove':
+        model.init_weights_glove(glove_path, preprocessor.word2idx)
 
-# =================================================
-# Train model
-# =================================================
+    if args.cuda:
+        model.cuda()
 
-print('=' * 89)
-print('training model...')
-print('=' * 89)
+    ### Train model
+    pprint(logfile_path, '=' * 89)
+    pprint(logfile_path, 'training model...')
+    pprint(logfile_path, '=' * 89)
 
-def evaluate(data_source):
-    model.eval()
-    total_loss = 0
-    n = len(corpus.vocab)
-    # hidden = model.init_hidden(eval_batch_size)
-    mse = nn.MSELoss()
-    dataloader = DataLoader(valid_data, batch_size=BATCH_SIZE, shuffle=True)
-    for batch, i in enumerate(dataloader):  # TODO: fix loop (bptt vs batch)
-        # data, targets = get_batch(data_source, i, evaluation=True)
-        data, targets = next(iter(dataloader))
+    lr = args.lr
+    best_val_loss = None
 
-        targets = Variable(targets.float(), requires_grad=False)
-        targets = targets.cuda()
-        # hidden = repackage_hidden(hidden)
-        model.zero_grad()
-        output = model(data)
-        y_ = output.view(-1, 1)
-        loss = mse(y_, targets)
-        total_loss += len(data) * loss.data
-        # hidden = repackage_hidden(hidden)
-    return total_loss[0] / len(data_source)
+    for epoch in range(1, args.epochs):
+        epoch_start_time = time.time()
+        train(model, train_data, args.batch, args.noise)
+        val_loss = evaluate(valid_data)
+        pprint(logfile_path, '-' * 89)
+        pprint(logfile_path, '| end of epoch {:3d} | time: {:5.2f}s | valid loss {:5.2f} | '
+              'valid ppl {:8.2f}'.format(epoch, (time.time() - epoch_start_time),
+                                         val_loss, math.exp(val_loss)))
+        pprint(logfile_path, '-' * 89)
+        if not best_val_loss or val_loss < best_val_loss:
+            with open(savefile_path, 'wb') as f:
+                torch.save(model, f)
+            best_val_loss = val_loss
 
-def train():
-    model.train()
-    total_loss = 0
-    # hidden = model.init_hidden(args.batch_size)
-    optim = Adam(model.parameters())
-    mse = nn.MSELoss()
-    dataloader = DataLoader(train_data, batch_size=BATCH_SIZE, shuffle=True)
+    pprint(logfile_path, '-' * 89)
+    pprint(logfile_path, 'best_val_loss: ' + best_val_loss)
+    pprint(logfile_path, '-' * 89)
 
-    for batch, i in enumerate(dataloader):  # TODO: fix loop (bptt vs batch)
-        start_time = time.time()
-        #  data, targets = get_batch(train_data, i)
-        # x, y = next(iter(dataloader))
-        # type(x) == <class 'list'>
-        # type(x[0]) == <class 'tuple'> of size batch_size
-        # type(y) == <class 'torch.LongTensor'> of size batch_size
-        data, targets = next(iter(dataloader))
-        targets = Variable(targets.float().cuda(), requires_grad=False)
-        # hidden = repackage_hidden(hidden)
-        model.zero_grad()
-        output = model(data)
-        y_ = output.view(-1, 1)
-        targets_noise = Variable(targets.data + torch.normal(means=torch.zeros(20), std=0.35).cuda(), requires_grad=False)
-        loss = mse(y_, targets_noise)
+    with open(savefile_path, 'rb') as f:
+        model = torch.load(f)
 
-        # loss = criterion(output.view(-1, n), targets)
-        optim.zero_grad()
-        loss.backward()
-        optim.step()
+    ### Run on test data
+    test_loss = evaluate(model, test_data, args.batch)
+    pprint(logfile_path, '=' * 89)
+    pprint(logfile_path, '| End of training | test loss {:5.2f} | test ppl {:8.2f}'.format(
+        test_loss, math.exp(test_loss)))
+    pprint(logfile_path, '=' * 89)
 
-
-        # loss.backward()
-        # torch.nn.utils.clip_grad_norm(model.parameters(), args.clip)
-        # for p in model.parameters():
-        #     p.data.add_(-lr, p.grad.data)
-
-        total_loss += loss.data
-
-        if batch % 10 == 0 and batch > 0: # @FIXME : Temporary value
-            cur_loss = total_loss[0] / 10  # @FIXME : Temporary value
-            elapsed = time.time() - start_time
-            print('| {:5d} batches | ms/batch {:5.2f} | loss {:5.2f}'.format(
-                     batch, elapsed * 1000 / 10, cur_loss)) # @FIXME : Temporary value
-            total_loss = 0
-            start_time = time.time()
-
-lr = INIT_LR
-best_val_loss = None
-
-for epoch in range(1, 100): # @FIXME : Temporary value
-    epoch_start_time = time.time()
-    train()
-    val_loss = evaluate(valid_data)
-    print('-' * 89)
-    print('| end of epoch {:3d} | time: {:5.2f}s | valid loss {:5.2f} | '
-          'valid ppl {:8.2f}'.format(epoch, (time.time() - epoch_start_time),
-                                     val_loss, math.exp(val_loss)))
-    print('-' * 89)
-    if not best_val_loss or val_loss < best_val_loss:
-        with open("./model/model.pt", 'wb') as f: # @FIXME : Temporary value
-            torch.save(model, f)
-        best_val_loss = val_loss
-
-print('-' * 89)
-print('best_val_loss: '  + best_val_loss)
-print('-' * 89)
-# =================================================
-# Run on test data
-# =================================================
-
-test_loss = evaluate(test_data)
-print('=' * 89)
-print('| End of training | test loss {:5.2f} | test ppl {:8.2f}'.format(
-    test_loss, math.exp(test_loss)))
-
-
-# with open(args.save, 'rb') as f:
-#     model = torch.load(f)
-
-# test_loss = evaluate(test_data)
-# print('=' * 89)
-# print('| End of training | test loss {:5.2f} | test ppl {:8.2f}'.format(
-#     test_loss, math.exp(test_loss)))
-# print('=' * 89)

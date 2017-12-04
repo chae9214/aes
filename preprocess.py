@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-# import numpy as np
-# import torch
 import os
 import codecs
 import pickle
@@ -22,32 +20,8 @@ def pickle_read(filename):
     return obj
 
 # =================================================
-# GloVe Word Vectors
+# Utility functions
 # =================================================
-#
-# def load_glove(path):
-#     with open(path) as f:
-#         glove = {}
-#         for line in f.readlines():
-#             values = line.split()
-#             word = ''.join(values[0:-300])
-#             vector = np.array(values[-300:], dtype='float32')
-#             glove[word] = vector
-#         return glove
-#
-# def load_embeddings(glove, word2idx, embedding_dim=300):
-#     embeddings = np.zeros((len(word2idx), embedding_dim))
-#     for word in glove.keys():
-#         index = word2idx.get(word)
-#         if index:
-#             vector = np.array(glove[word][1], dtype='float32')
-#             embeddings[index] = vector
-#     return torch.from_numpy(embeddings).float()
-
-# =================================================
-# Preprocess class
-# =================================================
-
 
 def equalize(data, length=500):  # data : list type
     if (len(data) > length):
@@ -55,9 +29,13 @@ def equalize(data, length=500):  # data : list type
     else:
         return data + ['<eos>'] * (500 - len(data))
 
-class Preprocess():
+# =================================================
+# Preprocessor class
+# =================================================
 
-    def __init__(self, glove_path, data_path):
+class Preprocessor():
+
+    def __init__(self, data_path):
         self.vocab, self.word2idx, self.idx2word = self.build_vocab(data_path)
 
         # self.glove = load_glove(glove_path)
@@ -94,7 +72,6 @@ class Preprocess():
         idx2word = len(word2idx.keys()) * [0]
         for word in word2idx.keys():
             idx2word[word2idx[word]] = word
-
         return vocab, word2idx, idx2word
 
     def tokenize(self, path):
@@ -107,24 +84,28 @@ class Preprocess():
                 data[temp[0]] = [[self.word2idx[x] for x in tknzr.tokenize(''.join(temp[1:-1]))], int(temp[-1])]
             return data
 
-
+# =================================================
+# Main
+# =================================================
 
 if __name__=='__main__':
     glove_path= '/home/hpc/PycharmProjects/AES_project/data/glove/glove.840B.300d.txt'
     data_path = '/home/hpc/PycharmProjects/AES_project/data/testset/'
-    f = open('/home/hpc/PycharmProjects/AES_project/data/result.txt', 'w')
-    print('initializing... Start')
-    p = Preprocess(glove_path, data_path)
-    print('initializing... End')
-    print('Vocab: ', file=f)
-    print(p.vocab, file=f)
-    print('word2idx: ', file=f)
-    print(p.word2idx, file=f)
-    print('idx2word: ', file=f)
-    print(p.idx2word, file=f)
-    print('train: ', file=f)
-    print(p.train, file=f)
-    print('valid: ', file=f)
-    print(p.valid, file=f)
-    print('test: ', file=f)
-    print(p.test, file=f)
+
+    with open('/home/hpc/PycharmProjects/AES_project/data/result.txt', 'w') as f:
+        print('initializing... Start')
+        p = Preprocess(glove_path, data_path)
+        print('initializing... End')
+
+        print('Vocab: ', file=f)
+        print(p.vocab, file=f)
+        print('word2idx: ', file=f)
+        print(p.word2idx, file=f)
+        print('idx2word: ', file=f)
+        print(p.idx2word, file=f)
+        print('train: ', file=f)
+        print(p.train, file=f)
+        print('valid: ', file=f)
+        print(p.valid, file=f)
+        print('test: ', file=f)
+        print(p.test, file=f)
