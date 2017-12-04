@@ -129,8 +129,8 @@ if __name__=='__main__':
 
     for epoch in range(1, args.epochs+1):
         epoch_start_time = time.time()
-        train(model, train_data, args.batch, args.noise)
-        val_loss = evaluate(model, valid_data, args.batch)
+        train(model, train_data, args.batch, logfile_path, args.noise,)
+        val_loss = evaluate(model, valid_data, args.batch, logfile_path)
         pprint(logfile_path, '-' * 89)
         pprint(logfile_path, '| end of epoch {:3d} | time: {:5.2f}s | '
                              'valid loss {:5.2f} | '.format(epoch, (time.time() - epoch_start_time), val_loss))
@@ -151,7 +151,7 @@ if __name__=='__main__':
         model = torch.load(f)
 
     ### Run on test data
-    test_loss = evaluate(model, test_data, args.batch)
+    test_loss = evaluate(model, test_data, args.batch, logfile_path)
     pprint(logfile_path, '=' * 89)
     pprint(logfile_path, '| End of training | test loss {:5.2f}'.format(test_loss))
     pprint(logfile_path, '=' * 89)
