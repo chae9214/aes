@@ -13,6 +13,7 @@ from model import CNNModel, LSTMModel
 from train import train, evaluate
 
 # =================================================
+# Utility functions
 # =================================================
 
 def parse_args():
