@@ -153,7 +153,6 @@ if __name__=='__main__':
     ### Run on test data
     test_loss = evaluate(model, test_data, args.batch)
     pprint(logfile_path, '=' * 89)
-    pprint(logfile_path, '| End of training | test loss {:5.2f} | test ppl {:8.2f}'.format(
-        test_loss, math.exp(test_loss)))
+    pprint(logfile_path, '| End of training | test loss {:5.2f}'.format(test_loss))
     pprint(logfile_path, '=' * 89)
 
