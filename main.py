@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+    # -*- coding: utf-8 -*-
 
 import argparse
 import time
@@ -130,7 +130,6 @@ def evaluate(data_source):
         output = model(data)
         y_ = output.view(-1, 1)
         loss = mse(y_, targets)
-
         total_loss += len(data) * loss.data
         # hidden = repackage_hidden(hidden)
     return total_loss[0] / len(data_source)
@@ -138,13 +137,13 @@ def evaluate(data_source):
 def train():
     model.train()
     total_loss = 0
-    start_time = time.time()
     # hidden = model.init_hidden(args.batch_size)
     optim = Adam(model.parameters())
     mse = nn.MSELoss()
     dataloader = DataLoader(train_data, batch_size=BATCH_SIZE, shuffle=True)
 
     for batch, i in enumerate(dataloader):  # TODO: fix loop (bptt vs batch)
+        start_time = time.time()
         #  data, targets = get_batch(train_data, i)
         # x, y = next(iter(dataloader))
         # type(x) == <class 'list'>
@@ -155,14 +154,15 @@ def train():
         # hidden = repackage_hidden(hidden)
         model.zero_grad()
         output = model(data)
-
         y_ = output.view(-1, 1)
-        loss = mse(y_, targets)
+        targets_noise = Variable(targets.data + torch.normal(means=torch.zeros(20), std=0.35).cuda(), requires_grad=False)
+        loss = mse(y_, targets_noise)
 
         # loss = criterion(output.view(-1, n), targets)
         optim.zero_grad()
         loss.backward()
         optim.step()
+
 
         # loss.backward()
         # torch.nn.utils.clip_grad_norm(model.parameters(), args.clip)
@@ -171,13 +171,11 @@ def train():
 
         total_loss += loss.data
 
-        if batch % 200 == 0 and batch > 0: # @FIXME : Temporary value
-            cur_loss = total_loss[0] / 200  # @FIXME : Temporary value
+        if batch % 10 == 0 and batch > 0: # @FIXME : Temporary value
+            cur_loss = total_loss[0] / 10  # @FIXME : Temporary value
             elapsed = time.time() - start_time
-            print('| epoch {:3d} | {:5d}/{:5d} batches | lr {:02.2f} | ms/batch {:5.2f} | '
-                    'loss {:5.2f} | ppl {:8.2f}'.format(
-                epoch, batch, len(train_data) // 'No Def', lr,       # @FIXME : Temporary value
-                elapsed * 1000 / 200, cur_loss, math.exp(cur_loss))) # @FIXME : Temporary value
+            print('| {:5d} batches | ms/batch {:5.2f} | loss {:5.2f}'.format(
+                     batch, elapsed * 1000 / 10, cur_loss)) # @FIXME : Temporary value
             total_loss = 0
             start_time = time.time()
 
@@ -197,10 +195,10 @@ for epoch in range(1, 100): # @FIXME : Temporary value
         with open("./model/model.pt", 'wb') as f: # @FIXME : Temporary value
             torch.save(model, f)
         best_val_loss = val_loss
-    else:
-        lr /= 4.0
 
-
+print('-' * 89)
+print('best_val_loss: '  + best_val_loss)
+print('-' * 89)
 # =================================================
 # Run on test data
 # =================================================

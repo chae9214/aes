@@ -36,8 +36,52 @@ def load_embeddings(glove, word2idx, embedding_dim=300):
 # LSTM Model
 # =================================================
 
-class LSTMModel(nn.Module):
+class CNNModel(nn.Module):
+    def __init__(self, n, d, h_dim, glove_path, word2idx):
+        super(LSTMModel, self).__init__()
+        # d = embedding_dimension
+        self.d = d
 
+        self.glove = load_glove(glove_path)
+        self.word2idx = word2idx
+        self.embedding = nn.Embedding(n, d)
+        self.embedding.weight.data.copy_(load_embeddings(self.glove, self.word2idx))
+
+        Ci = 1 # Number of channels in the input image
+        Co = 100 # Number of channels produced by the convolution
+        Ks = [3, 4, 5]
+        self.convs1 = nn.ModuleList([nn.Conv2d(Ci, Co, (K, self.d)) for K in Ks])
+        '''
+        self.conv13 = nn.Conv2d(Ci, Co, (3, D))
+        self.conv14 = nn.Conv2d(Ci, Co, (4, D))
+        self.conv15 = nn.Conv2d(Ci, Co, (5, D))
+        '''
+        self.dropout = nn.Dropout(0.5) # @FIXME
+        self.fc1 = nn.Linear(len(Ks)*Co, 1)
+
+    def init_hidden(self, batch_size):
+        return Variable(torch.zeros((1, batch_size, self.h_dim)), requires_grad=False)
+
+    def conv_and_pool(self, x, conv):
+        x = F.relu(conv(x)).squeeze(3) #(N,Co,W)
+        x = F.max_pool1d(x, x.size(2)).squeeze(2)
+        return x
+
+    def forward(self, x):
+        # x = [[11, 21, 31], [12, 22, 32]]
+        # x.size() == [seqs, batch_size]
+        x = self.embedding(Variable(LT([list(x_) for x_ in x]).cuda(), requires_grad=False))
+        x = x.permute(1, 0, 2)
+        x = x.unsqueeze(1)
+        x = [F.relu(conv(x)).squeeze(3) for conv in self.convs1]  # [(N,Co,W), ...]*len(Ks)]
+        x = [F.max_pool1d(i, i.size(2)).squeeze(2) for i in x]  # [(N,Co), ...]*len(Ks)]
+        x = torch.cat(x, 1)
+        x = self.dropout(x)  # (N,len(Ks)*Co)
+        out = self.fc1(x)  # (N,C)
+        return out
+
+
+class LSTMModel(nn.Module):
     def __init__(self, n, d, h_dim, glove_path, word2idx):
         super(LSTMModel, self).__init__()
         # d = embedding_dimension
@@ -57,12 +101,17 @@ class LSTMModel(nn.Module):
     def init_hidden(self, batch_size):
         return Variable(torch.zeros((1, batch_size, self.h_dim)), requires_grad=False)
 
+    def conv_and_pool(self, x, conv):
+        x = F.relu(conv(x)).squeeze(3)  # (N,Co,W)
+        x = F.max_pool1d(x, x.size(2)).squeeze(2)
+        return x
+
     def forward(self, x):
         # x = [[11, 21, 31], [12, 22, 32]]
         # x.size() == [seqs, batch_size]
         x = self.embedding(Variable(LT([list(x_) for x_ in x]).cuda(), requires_grad=False))
 
-#        x = self.embedding(Variable(LT(x), requires_grad=False))
+        #        x = self.embedding(Variable(LT(x), requires_grad=False))
         # x.size() == [seqs, batch_size, embedding_dimension]
         batch_size = x.size()[1]
         h = self.init_hidden(batch_size)
@@ -79,6 +128,7 @@ class LSTMModel(nn.Module):
         out = self.fc2(out)  # 2048 -> 1
         # out.size() == [batch_size, 1]
         return out
+
 
 # =================================================
 # RNN Model

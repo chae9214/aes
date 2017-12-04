@@ -2,3 +2,6 @@ __pycache__/
 data/glove.840B.300d.txt
 data/*.dat
 model/*
+.idea
+*.xml
+*.pt
