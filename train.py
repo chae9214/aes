@@ -11,9 +11,12 @@ import numpy as np
 from scipy.stats import pearsonr
 from scipy.stats import spearmanr
 
+# =================================================
+# Utility functions
+# =================================================
+
 def rmse(predictions, targets):
     return np.sqrt(((predictions - targets) ** 2).mean())
-
 
 def get_metrics(y, y_):
     rmse_row = rmse(y, y_)
@@ -21,7 +24,9 @@ def get_metrics(y, y_):
     s_row, p_value = spearmanr(y, y_)
     return rmse_row, r_row, s_row
 
-
+# =================================================
+# Train function
+# =================================================
 
 def train(model, train_data, batch_size, noise=False):
     model.train()
@@ -59,6 +64,10 @@ def train(model, train_data, batch_size, noise=False):
             total_loss = 0
             start_time = time.time()
 
+# =================================================
+# Evaluate function
+# =================================================
+
 def evaluate(model, test_data, batch_size):
     model.eval()
     total_loss = 0
@@ -77,8 +86,8 @@ def evaluate(model, test_data, batch_size):
         if batch % 20 == 0 and batch > 0:  #
             met_rmse, met_pearsonr, spearmanr = get_metrics(y_.data.float().cpu().numpy().flatten(),
                                                             targets.data.float().cpu().numpy().flatten())
-            print('BATCH {}|RMSE : {:3.3f} |PEARSON R : {:3.3f}|SPEARMAN R : {:3.3f}'.format(batch, met_rmse, met_pearsonr,
-                                                                                          spearmanr))
+            print('BATCH {}| RMSE : {:3.3f} | PEARSON R : {:3.3f}| SPEARMAN R : {:3.3f}'.format(
+                batch, met_rmse,met_pearsonr, spearmanr))
 
         total_loss += len(data) * loss.data
     return total_loss[0] / len(test_data)
