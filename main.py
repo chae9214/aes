@@ -53,8 +53,7 @@ def parse_args():
 
 def pprint(filepath, s):
     print(s)
-    with open(filepath, 'a') as f:
-        print(s, f)
+    open(filepath, 'a').write(s + '\n')
 
 # =================================================
 # Corpus class
