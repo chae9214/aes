@@ -122,6 +122,7 @@ class LSTMModel(nn.Module):
         c = self.init_hidden(batch_size)
         h = h.cuda()
         c = c.cuda()
+        x = x.contiguous()
         out, (h, c) = self.encoder(x, (h, c))
         # out.size() == [seq_len, batch_size, h_dim]
         h = h.squeeze()

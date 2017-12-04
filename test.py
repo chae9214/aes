@@ -17,9 +17,6 @@ os.system("python main.py --set 6 --model CNN --epochs 100")
 os.system("python main.py --set 7 --model CNN --epochs 100")
 os.system("python main.py --set 8 --model CNN --epochs 100")
 
-os.system("python main.py --set 1 --model CNN --embed none --epochs 50")
-os.system("python main.py --set 1 --model CNN --embed none --epochs 80")
-os.system("python main.py --set 1 --model CNN --embed none --epochs 100")
 os.system("python main.py --set 1 --model CNN --embed none --epochs 200")
 
 os.system("python main.py --set 1 --model CNN --embed none --epochs 100")
@@ -35,9 +32,6 @@ os.system("python main.py --set 6 --model LSTM --epochs 100")
 os.system("python main.py --set 7 --model LSTM --epochs 100")
 os.system("python main.py --set 8 --model LSTM --epochs 100")
 
-os.system("python main.py --set 1 --model LSTM --embed glove --epochs 50")
-os.system("python main.py --set 1 --model LSTM --embed glove --epochs 80")
-os.system("python main.py --set 1 --model LSTM --embed glove --epochs 100")
 os.system("python main.py --set 1 --model LSTM --embed glove --epochs 200")
 
 os.system("python main.py --set 1 --model LSTM --embed none --epochs 100")
