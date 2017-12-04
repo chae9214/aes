@@ -127,7 +127,7 @@ if __name__=='__main__':
     lr = args.lr
     best_val_loss = None
 
-    for epoch in range(1, args.epochs):
+    for epoch in range(1, args.epochs+1):
         epoch_start_time = time.time()
         train(model, train_data, args.batch, args.noise)
         val_loss = evaluate(model, valid_data, args.batch)
@@ -142,7 +142,7 @@ if __name__=='__main__':
             best_val_loss = val_loss
 
     pprint(logfile_path, '-' * 89)
-    pprint(logfile_path, 'best_val_loss: ' + best_val_loss)
+    pprint(logfile_path, 'best_val_loss: {}'.format(best_val_loss))
     pprint(logfile_path, '-' * 89)
 
     with open(savefile_path, 'rb') as f:
