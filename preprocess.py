@@ -29,6 +29,13 @@ def equalize(data, length=500):  # data : list type
     else:
         return data + ['<eos>'] * (500 - len(data))
 
+def isNumber(s):
+    try:
+        float(s)
+        return True
+    except ValueError:
+        return False
+
 # =================================================
 # Preprocessor class
 # =================================================
@@ -81,7 +88,8 @@ class Preprocessor():
             # essay_id, essay, domain1_score
             for line in f.readlines():
                 temp = line.replace('\ufeff', '').replace('\n', '').split(',')
-                data[temp[0]] = [[self.word2idx[x] for x in tknzr.tokenize(''.join(temp[1:-1]))], int(temp[-1])]
+                if(isNumber(temp[-1])):
+                    data[temp[0]] = [[self.word2idx[x] for x in tknzr.tokenize(''.join(temp[1:-1]))], int(temp[-1])]
             return data
 
 # =================================================
