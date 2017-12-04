@@ -86,7 +86,7 @@ def evaluate(model, test_data, batch_size):
         if batch % 20 == 0 and batch > 0:  #
             met_rmse, met_pearsonr, spearmanr = get_metrics(y_.data.float().cpu().numpy().flatten(),
                                                             targets.data.float().cpu().numpy().flatten())
-            print('BATCH {}| RMSE : {:3.3f} | PEARSON R : {:3.3f}| SPEARMAN R : {:3.3f}'.format(
+            print('| BATCH {} | RMSE : {:3.3f} | PEARSON R : {:3.3f} | SPEARMAN R : {:3.3f}'.format(
                 batch, met_rmse,met_pearsonr, spearmanr))
 
         total_loss += len(data) * loss.data

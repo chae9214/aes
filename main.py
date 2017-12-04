@@ -132,9 +132,8 @@ if __name__=='__main__':
         train(model, train_data, args.batch, args.noise)
         val_loss = evaluate(model, valid_data, args.batch)
         pprint(logfile_path, '-' * 89)
-        pprint(logfile_path, '| end of epoch {:3d} | time: {:5.2f}s | valid loss {:5.2f} | '
-              'valid ppl {:8.2f}'.format(epoch, (time.time() - epoch_start_time),
-                                         val_loss, math.exp(val_loss)))
+        pprint(logfile_path, '| end of epoch {:3d} | time: {:5.2f}s | ''
+                             'valid loss {:5.2f} | '.format(epoch, (time.time() - epoch_start_time), val_loss))
         pprint(logfile_path, '-' * 89)
         if epoch % 20 == 0:
             with open (savefile_path + '--e{}'.format(epoch), 'wb') as f:
