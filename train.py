@@ -42,10 +42,8 @@ def get_metrics(y, y_):
     rmse_row = rmse(y, y_)
     r_row, p_value = pearsonr(y, y_)
     s_row, p_value = spearmanr(y, y_)
-    c_row = quadratic_weighted_kappa(np.round(y), np.round(y_), len(y_))
-    return rmse_row, r_row, s_row, c_row
-
-
+    k_row = quadratic_weighted_kappa(np.round(y), np.round(y_), len(y_))
+    return rmse_row, r_row, s_row, k_row
 
 # =================================================
 # Train function
@@ -107,10 +105,10 @@ def evaluate(model, test_data, batch_size):
         y_ = output.view(-1, 1)
         loss = mse(y_, targets)
         if batch % 20 == 0 and batch > 0:  #
-            met_rmse, met_pearsonr, spearmanr, cohens = get_metrics(y_.data.float().cpu().numpy().flatten(),
-                                                            targets.data.float().cpu().numpy().flatten())
-            print('| BATCH {} | RMSE : {:3.3f} | PEARSON R : {:3.3f} | SPEARMAN R : {:3.3f} | COHEN KAPPA : {:3.3f} |'.format(
-                batch, met_rmse,met_pearsonr, spearmanr, cohens))
+            met_rmse, met_pearsonr, spearmanr, kappa = get_metrics(y_.data.float().cpu().numpy().flatten(),
+                                                                    targets.data.float().cpu().numpy().flatten())
+            print('| BATCH {} | RMSE : {:3.3f} | PEARSON R : {:3.3f} | SPEARMAN R : {:3.3f} | KAPPA : {:3.3f} |'.format(
+                batch, met_rmse, met_pearsonr, spearmanr, kappa))
 
         total_loss += len(data) * loss.data
     return total_loss[0] / len(test_data)
