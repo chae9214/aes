@@ -49,7 +49,7 @@ class CNNModel(nn.Module):
         Ci = 1 # Number of channels in the input image
         Co = 100 # Number of channels produced by the convolution
         Ks = [3, 4, 5]
-        self.convs1 = nn.ModuleList([nn.Conv2d(Ci, Co, (K, self.d)) for K in Ks])
+        self.convs1 = nn.ModuleList([nn.Conv2d(Ci, Co, (K, self.e_dim)) for K in Ks])
         '''
         self.conv13 = nn.Conv2d(Ci, Co, (3, D))
         self.conv14 = nn.Conv2d(Ci, Co, (4, D))
