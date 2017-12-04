@@ -12,10 +12,16 @@ from scipy.stats import pearsonr
 from scipy.stats import spearmanr
 from scipy.sparse import coo_matrix
 
-from main import pprint
-
 # =================================================
 # Utility functions
+# =================================================
+
+def pprint(filepath, s):
+    print(s)
+    open(filepath, 'a').write(s + '\n')
+
+# =================================================
+# Metric functions
 # =================================================
 
 def rmse(predictions, targets):
