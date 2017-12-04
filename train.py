@@ -102,10 +102,8 @@ def get_metrics(y, y_):
     rmse_row = rmse(y, y_)
     r_row, p_value = pearsonr(y, y_)
     s_row, p_value = spearmanr(y, y_)
-    c_row = quadratic_weighted_kappa(np.round(y), np.round(y_))
-    return rmse_row, r_row, s_row, c_row
-
-
+    k_row = quadratic_weighted_kappa(np.round(y), np.round(y_))
+    return rmse_row, r_row, s_row, k_row
 
 # =================================================
 # Train function
@@ -139,7 +137,7 @@ def train(model, train_data, batch_size, noise=False):
         loss.backward()
         optim.step()
 
-        if batch % batch_size == 0 and batch > 0:
+        if batch % batch_size == 0 or batch == len(dataloader)-1:
             cur_loss = total_loss[0] / batch_size
             elapsed = time.time() - start_time
             print('| {:5d} batches | ms/batch {:5.2f} | loss {:5.2f}'.format(
@@ -166,6 +164,7 @@ def evaluate(model, test_data, batch_size):
         output = model(data)
         y_ = output.view(-1, 1)
         loss = mse(y_, targets)
+<<<<<<< HEAD
 #        if batch % 20 == 0 and batch > 0:  #
 #            met_rmse, met_pearsonr, spearmanr, cohens = get_metrics(y_.data.float().cpu().numpy().flatten(),
 #                                                            targets.data.float().cpu().numpy().flatten())
@@ -173,6 +172,14 @@ def evaluate(model, test_data, batch_size):
 #                batch, met_rmse,met_pearsonr, spearmanr, cohens))
         y_cum = np.concatenate((y_cum, y_.data.float().cpu().numpy().flatten()))
         targets_cum = np.concatenate((targets_cum, targets.data.float().cpu().numpy().flatten()))
+=======
+        if batch % batch_size == 0 or batch == len(dataloader)-1:
+            met_rmse, met_pearsonr, spearmanr, kappa = get_metrics(y_.data.float().cpu().numpy().flatten(),
+                                                                    targets.data.float().cpu().numpy().flatten())
+            print('| BATCH {} | RMSE : {:3.3f} | PEARSON R : {:3.3f} | SPEARMAN R : {:3.3f} | KAPPA : {:3.3f} |'.format(
+                batch, met_rmse, met_pearsonr, spearmanr, kappa))
+
+>>>>>>> 0a99478ac89ce83319ac1e165434885f5b51665d
         total_loss += len(data) * loss.data
     met_rmse, met_pearsonr, spearmanr, cohens = get_metrics(y_cum, targets_cum)
     print('| RMSE : {:3.3f} | PEARSON R : {:3.3f} | SPEARMAN R : {:3.3f} | COHEN KAPPA : {:3.3f} |'.format(met_rmse,met_pearsonr, spearmanr, cohens))
