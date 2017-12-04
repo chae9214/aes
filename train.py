@@ -77,7 +77,7 @@ def train(model, train_data, batch_size, noise=False):
         loss.backward()
         optim.step()
 
-        if batch % batch_size == 0 and batch > 0:
+        if batch % batch_size == 0 or batch == len(dataloader)-1:
             cur_loss = total_loss[0] / batch_size
             elapsed = time.time() - start_time
             print('| {:5d} batches | ms/batch {:5.2f} | loss {:5.2f}'.format(
@@ -104,7 +104,7 @@ def evaluate(model, test_data, batch_size):
 
         y_ = output.view(-1, 1)
         loss = mse(y_, targets)
-        if batch % 20 == 0 and batch > 0:  #
+        if batch % batch_size == 0 or batch == len(dataloader)-1:
             met_rmse, met_pearsonr, spearmanr, kappa = get_metrics(y_.data.float().cpu().numpy().flatten(),
                                                                     targets.data.float().cpu().numpy().flatten())
             print('| BATCH {} | RMSE : {:3.3f} | PEARSON R : {:3.3f} | SPEARMAN R : {:3.3f} | KAPPA : {:3.3f} |'.format(
