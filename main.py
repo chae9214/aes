@@ -23,7 +23,9 @@ def parse_args():
                         help='path to load data')
     parser.add_argument('--save', type=str, default='./save/',
                         help='path to save model')
-    # model/embedding choice
+    # set/model/embedding choice
+    parser.add_argument('--set', type=str, default='1',
+                        help="essay set to use (1-8)")
     parser.add_argument('--model', type=str, default='LSTM',
                         help="model to use (CNN, LSTM, Bi-LSTM)")
     parser.add_argument('--embed', type=str, default='glove',
@@ -39,7 +41,7 @@ def parse_args():
                         help='upper epoch limit')
     parser.add_argument('--lr', type=float, default=20,
                         help='initial learning rate')
-    parser.add_argument('--dropout', type=float, default=0.2,
+    parser.add_argument('--dropout', type=float, default=0.5,
                         help='dropout applied to layers')
     # boolean arguments
     parser.add_argument('-n', '--noise', action='store_true',
@@ -75,9 +77,10 @@ class Corpus(Dataset):
 
 if __name__=='__main__':
     args = parse_args()
-    savefile = "model_{}_{}--set{}_emb{}_hid{}_bat{}_epc{}.pt".format(args.model, args.embed, args.data.strip('/')[-1],
+    datapath = os.path.join(args.data, "essayset_{}".format(args.set))
+    savefile = "model_{}_{}--set{}_emb{}_hid{}_bat{}_epc{}.pt".format(args.model, args.embed, datapath.strip('/')[-1],
                                                                       args.e_dim, args.h_dim, args.batch, args.epochs)
-    logfile = "log_{}_{}--set{}_emb{}_hid{}_bat{}_epc{}.pt".format(args.model, args.embed, args.data.strip('/')[-1],
+    logfile = "log_{}_{}--set{}_emb{}_hid{}_bat{}_epc{}.pt".format(args.model, args.embed, datapath.strip('/')[-1],
                                                                    args.e_dim, args.h_dim, args.batch, args.epochs)
     savefile_path = os.path.join(args.save, savefile)
     logfile_path = os.path.join(args.save, logfile)
@@ -93,10 +96,10 @@ if __name__=='__main__':
 
     glove_path = "./data/glove.840B.300d.txt"
 
-    preprocessor = Preprocessor(args.data)
-    train_data = Corpus('data/train.dat')
-    valid_data = Corpus('data/valid.dat')
-    test_data = Corpus('data/test.dat')
+    preprocessor = Preprocessor(datapath)
+    train_data = Corpus(os.path.join(datapath, 'train.dat'))
+    valid_data = Corpus(os.path.join(datapath, 'valid.dat'))
+    test_data = Corpus(os.path.join(datapath, 'test.dat'))
 
     ### Build model
     pprint(logfile_path, '=' * 89)
