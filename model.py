@@ -37,15 +37,14 @@ def load_embeddings(glove, word2idx, e_dim=300):
 # =================================================
 
 class CNNModel(nn.Module):
-    def __init__(self, n, d, h_dim, glove_path, word2idx):
+    def __init__(self, n, e_dim, h_dim, dropout):
         super(CNNModel, self).__init__()
-        # d = embedding_dimension
-        self.d = d
+        self.e_dim = e_dim
+        self.h_dim = h_dim
 
-        self.glove = load_glove(glove_path)
-        self.word2idx = word2idx
-        self.embedding = nn.Embedding(n, d)
-        self.embedding.weight.data.copy_(load_embeddings(self.glove, self.word2idx))
+        self.dropout = nn.Dropout(dropout)
+        self.embedding = nn.Embedding(n, self.e_dim)
+        self.init_weights_uniform()
 
         Ci = 1 # Number of channels in the input image
         Co = 100 # Number of channels produced by the convolution
@@ -56,8 +55,15 @@ class CNNModel(nn.Module):
         self.conv14 = nn.Conv2d(Ci, Co, (4, D))
         self.conv15 = nn.Conv2d(Ci, Co, (5, D))
         '''
-        self.dropout = nn.Dropout(0.5) # @FIXME
         self.fc1 = nn.Linear(len(Ks)*Co, 1)
+
+    def init_weights_uniform(self):
+        initrange = 0.1
+        self.embedding.weight.data.uniform_(-initrange, initrange)
+
+    def init_weights_glove(self, glove_path, word2idx):
+        glove = load_glove(glove_path)
+        self.embedding.weight.data.copy_(load_embeddings(glove, word2idx))
 
     def init_hidden(self, batch_size):
         return Variable(torch.zeros((1, batch_size, self.h_dim)), requires_grad=False)
@@ -81,11 +87,12 @@ class CNNModel(nn.Module):
 
 class LSTMModel(nn.Module):
 
-    def __init__(self, n, e_dim, h_dim):
+    def __init__(self, n, e_dim, h_dim, dropout):
         super(LSTMModel, self).__init__()
         self.e_dim = e_dim
         self.h_dim = h_dim
 
+        self.dropout = nn.Dropout(dropout)
         self.embedding = nn.Embedding(n, self.e_dim)
         self.init_weights_uniform()
 
@@ -122,6 +129,7 @@ class LSTMModel(nn.Module):
         out = self.fc1(h)           # h_dim -> 2048
         out = self.bn(out)          # 2048 -> 2048
         out = F.leaky_relu(out)     # activation
+        out = self.dropout(out)
         out = self.fc2(out)         # 2048 -> 1
         # out.size() == [batch_size, 1]
         return out
