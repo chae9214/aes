@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import time
+import torch
 import torch.nn as nn
 from torch.autograd import Variable
 from torch.optim import Adam

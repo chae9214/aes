@@ -19,7 +19,7 @@ from train import train, evaluate
 def parse_args():
     parser = argparse.ArgumentParser()
     # paths
-    parser.add_argument('--data', type=str, default='./data/essayset_1/',
+    parser.add_argument('--data', type=str, default='./data/',
                         help='path to load data')
     parser.add_argument('--save', type=str, default='./save/',
                         help='path to save model')
@@ -130,7 +130,7 @@ if __name__=='__main__':
     for epoch in range(1, args.epochs):
         epoch_start_time = time.time()
         train(model, train_data, args.batch, args.noise)
-        val_loss = evaluate(valid_data)
+        val_loss = evaluate(model, valid_data, args.batch)
         pprint(logfile_path, '-' * 89)
         pprint(logfile_path, '| end of epoch {:3d} | time: {:5.2f}s | valid loss {:5.2f} | '
               'valid ppl {:8.2f}'.format(epoch, (time.time() - epoch_start_time),
