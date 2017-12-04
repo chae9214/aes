@@ -11,7 +11,6 @@ import os
 
 os.system("python main.py --set 1 --model CNN --epochs 100 --cuda")
 os.system("python main.py --set 3 --model CNN --epochs 100 --cuda")
-os.system("python main.py --set 4 --model CNN --epochs 100 --cuda")
 os.system("python main.py --set 5 --model CNN --epochs 100 --cuda")
 os.system("python main.py --set 6 --model CNN --epochs 100 --cuda")
 os.system("python main.py --set 7 --model CNN --epochs 100 --cuda")
@@ -26,7 +25,6 @@ os.system("python main.py --set 5 --model CNN --embed glove --epochs 100 --cuda 
 
 os.system("python main.py --set 1 --model LSTM --epochs 100 --cuda")
 os.system("python main.py --set 3 --model LSTM --epochs 100 --cuda")
-os.system("python main.py --set 4 --model LSTM --epochs 100 --cuda")
 os.system("python main.py --set 5 --model LSTM --epochs 100 --cuda")
 os.system("python main.py --set 6 --model LSTM --epochs 100 --cuda")
 os.system("python main.py --set 7 --model LSTM --epochs 100 --cuda")
