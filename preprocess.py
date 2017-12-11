@@ -57,8 +57,8 @@ class Preprocessor():
             self.valid = self.tokenize(os.path.join(data_path, 'valid.csv'))
             self.test = self.tokenize(os.path.join(data_path, 'test.csv'))
             pickle_write(train_filename, self.train)
-            pickle_write(valid_filename, self.train)
-            pickle_write(test_filename, self.train)
+            pickle_write(valid_filename, self.valid)
+            pickle_write(test_filename, self.test)
         else:
             self.train = pickle_read(train_filename)
             self.valid = pickle_read(valid_filename)
