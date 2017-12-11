@@ -74,7 +74,7 @@ class Preprocessor():
                     temp = line.replace('\ufeff', '').replace('\n', '').split(',')
                     data = tknzr.tokenize(''.join(temp[1:-1]))
                     vocab |= set(data)
-
+        vocab |= set(['<eos>'])
         word2idx = {word: idx for idx, word in enumerate(vocab)}
         idx2word = len(word2idx.keys()) * [0]
         for word in word2idx.keys():
@@ -89,7 +89,7 @@ class Preprocessor():
             for line in f.readlines():
                 temp = line.replace('\ufeff', '').replace('\n', '').split(',')
                 if is_number(temp[-1]):
-                    data[temp[0]] = [[self.word2idx[x] for x in tknzr.tokenize(''.join(temp[1:-1]))], int(temp[-1])]
+                    data[temp[0]] = [[self.word2idx[x] for x in equalize(tknzr.tokenize(''.join(temp[1:-1])))], int(temp[-1])]
             return data
 
 # =================================================
