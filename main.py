@@ -109,7 +109,9 @@ if __name__=='__main__':
     n = len(preprocessor.vocab)
 
     if args.model == 'LSTM':
-        model = LSTMModel(n, args.e_dim, args.h_dim, args.dropout)
+        model = LSTMModel(n, args.e_dim, args.h_dim, args.dropout, False)
+    elif args.model == 'bi-LSTM':
+        model = LSTMModel(n, args.e_dim, args.h_dim, args.dropout, True)
     elif args.model == 'CNN':
         model = CNNModel(n, args.e_dim, args.h_dim, args.dropout)
 

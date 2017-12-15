@@ -65,9 +65,6 @@ class CNNModel(nn.Module):
         glove = load_glove(glove_path)
         self.embedding.weight.data.copy_(load_embeddings(glove, word2idx))
 
-    def init_hidden(self, batch_size):
-        return Variable(torch.zeros((1, batch_size, self.h_dim)), requires_grad=False)
-
     def forward(self, x):
         # x = [[11, 21, 31], [12, 22, 32]]
         # x.size() == [seqs, batch_size]
@@ -87,19 +84,26 @@ class CNNModel(nn.Module):
 
 class LSTMModel(nn.Module):
 
-    def __init__(self, n, e_dim, h_dim, dropout):
+    def __init__(self, n, e_dim, h_dim, dropout, biLSTM = False):
         super(LSTMModel, self).__init__()
         self.e_dim = e_dim
         self.h_dim = h_dim
 
         self.dropout = nn.Dropout(dropout)
         self.embedding = nn.Embedding(n, self.e_dim)
+        self.biLSTM = biLSTM
         self.init_weights_uniform()
 
-        self.encoder = nn.LSTM(self.e_dim, self.h_dim)
+        self.encoder = nn.LSTM(self.e_dim, self.h_dim, bidirectional = biLSTM)
+
         self.fc1 = nn.Linear(self.h_dim, 2048)
-        self.fc2 = nn.Linear(2048, 1)
-        self.bn = nn.BatchNorm1d(2048)
+
+        if(biLSTM == True):
+            self.fc2 = nn.Linear(4096, 1)
+            self.bn = nn.BatchNorm1d(4096)
+        else:
+            self.fc2 = nn.Linear(2048, 1)
+            self.bn = nn.BatchNorm1d(2048)
 
     def init_weights_uniform(self):
         initrange = 0.1
@@ -110,7 +114,10 @@ class LSTMModel(nn.Module):
         self.embedding.weight.data.copy_(load_embeddings(glove, word2idx))
 
     def init_hidden(self, batch_size):
-        return Variable(torch.zeros((1, batch_size, self.h_dim)), requires_grad=False)
+        if self.biLSTM == True:
+            return Variable(torch.zeros((2, batch_size, self.h_dim)), requires_grad=False)
+        else:
+            return Variable(torch.zeros((1, batch_size, self.h_dim)), requires_grad=False)
 
     def forward(self, x):
         # x = [[11, 21, 31], [12, 22, 32]]
@@ -128,6 +135,10 @@ class LSTMModel(nn.Module):
         h = h.squeeze()
         # h.size() == [batch_size, h_dim]
         out = self.fc1(h)           # h_dim -> 2048
+
+        if(self.biLSTM == True):
+            out = torch.cat((out[0], out[1]), 1)
+
         out = self.bn(out)          # 2048 -> 2048
         out = F.leaky_relu(out)     # activation
         out = self.dropout(out)
